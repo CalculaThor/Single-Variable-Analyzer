@@ -39,6 +39,8 @@ var fixTable, secTable []Reg2
 var mulTable []Reg3
 var newTable []Reg4
 
+var relativeError bool
+
 func IncrementalSearch(x0, dx float64, maxIt uint) (ans *RootRange) {
 	ans = &RootRange{}
 	xi := x0
@@ -83,7 +85,7 @@ func IncrementalSearch(x0, dx float64, maxIt uint) (ans *RootRange) {
 
 func Bisection(a, b, tolerance float64, maxIt uint) (ans *RootAnswer) {
 	ans = &RootAnswer{}
-	bisTable = make([]Reg1, int(maxIt))
+	bisTable = make([]Reg1, 0)
 	xi := a
 	yi, _ := F(xi)
 	if yi == 0 {
@@ -122,6 +124,9 @@ func Bisection(a, b, tolerance float64, maxIt uint) (ans *RootAnswer) {
 		xm = (xi + xs) / float64(2)
 		ym, _ = F(xm)
 		err = math.Abs(xm - temp)
+		if relativeError && xm != 0 {
+			err /= math.Abs(xm)
+		}
 		count++
 		bisTable = append(bisTable, Reg1{xi, xs, xm, ym, int(count)})
 	}
@@ -140,9 +145,9 @@ func Bisection(a, b, tolerance float64, maxIt uint) (ans *RootAnswer) {
 	return
 }
 
-func falsePosition(a, b, tolerance float64, maxIt uint) (ans *RootAnswer) {
+func FalsePosition(a, b, tolerance float64, maxIt uint) (ans *RootAnswer) {
 	ans = &RootAnswer{}
-	falTable = make([]Reg1, int(maxIt))
+	falTable = make([]Reg1, 0)
 	xi := a
 	yi, _ := F(xi)
 	if yi == 0 {
@@ -180,6 +185,9 @@ func falsePosition(a, b, tolerance float64, maxIt uint) (ans *RootAnswer) {
 		xm = xi - (yi * (xs - xi) / (ys - yi))
 		ym, _ = F(xm)
 		err = math.Abs(xm - temp)
+		if relativeError && xm != 0 {
+			err /= math.Abs(xm)
+		}
 		count++
 		falTable = append(falTable, Reg1{xi, xs, xm, ym, int(count)})
 	}
@@ -198,9 +206,9 @@ func falsePosition(a, b, tolerance float64, maxIt uint) (ans *RootAnswer) {
 	return
 }
 
-func fixedPoint(x0, tolerance float64, maxIt uint) (ans *RootAnswer) {
+func FixedPoint(x0, tolerance float64, maxIt uint) (ans *RootAnswer) {
 	ans = &RootAnswer{}
-	fixTable = make([]Reg2, int(maxIt))
+	fixTable = make([]Reg2, 0)
 	xn := x0
 	yn, _ := F(xn)
 	err := math.MaxFloat64
@@ -213,6 +221,9 @@ func fixedPoint(x0, tolerance float64, maxIt uint) (ans *RootAnswer) {
 		xn, _ = G(xn)
 		yn, _ = F(xn)
 		err = math.Abs(xn - last)
+		if relativeError && xn != 0 {
+			err /= math.Abs(xn)
+		}
 		count++
 		fixTable = append(fixTable, Reg2{xn, yn, int(count)})
 	}
@@ -230,9 +241,9 @@ func fixedPoint(x0, tolerance float64, maxIt uint) (ans *RootAnswer) {
 	return
 }
 
-func newton(x0, tolerance float64, maxIt uint) (ans *RootAnswer) {
+func Newton(x0, tolerance float64, maxIt uint) (ans *RootAnswer) {
 	ans = &RootAnswer{}
-	newTable = make([]Reg4, int(maxIt))
+	newTable = make([]Reg4, 0)
 	x := x0
 	y, _ := F(x)
 	dy, _ := DF(x)
@@ -245,6 +256,9 @@ func newton(x0, tolerance float64, maxIt uint) (ans *RootAnswer) {
 		y, _ = F(x1)
 		dy, _ = DF(x1)
 		err = math.Abs(x1 - x)
+		if relativeError && x1 != 0 {
+			err /= math.Abs(x1)
+		}
 		x = x1
 		count++
 		newTable = append(newTable, Reg4{x, y, dy, int(count)})
@@ -268,9 +282,9 @@ func newton(x0, tolerance float64, maxIt uint) (ans *RootAnswer) {
 
 }
 
-func secant(a, b, tolerance float64, maxIt uint) (ans *RootAnswer) {
+func Secant(a, b, tolerance float64, maxIt uint) (ans *RootAnswer) {
 	ans = &RootAnswer{}
-	secTable = make([]Reg2, int(maxIt))
+	secTable = make([]Reg2, 0)
 	x0 := a
 	y0, _ := F(x0)
 	if y0 == 0 {
@@ -286,6 +300,9 @@ func secant(a, b, tolerance float64, maxIt uint) (ans *RootAnswer) {
 	for y1 != 0 && err > tolerance && y1 != y0 && count < maxIt {
 		x2 = x1 - y1*(x1-x0)/(y1-y0)
 		err = math.Abs(x2 - x1)
+		if relativeError && x2 != 0 {
+			err /= math.Abs(x2)
+		}
 		x0 = x1
 		y0 = y1
 		x1 = x2
@@ -310,9 +327,9 @@ func secant(a, b, tolerance float64, maxIt uint) (ans *RootAnswer) {
 	return
 }
 
-func multipeRootAux(x0, tolerance float64, maxIt uint) (ans *RootAnswer) {
+func MultipeRoot(x0, tolerance float64, maxIt uint) (ans *RootAnswer) {
 	ans = &RootAnswer{}
-	mulTable = make([]Reg3, int(maxIt))
+	mulTable = make([]Reg3, 0)
 	x := x0
 	y, _ := F(x)
 	dy, _ := DF(x)
@@ -329,6 +346,9 @@ func multipeRootAux(x0, tolerance float64, maxIt uint) (ans *RootAnswer) {
 		d2y, _ = D2F(x1)
 		dy2 = math.Pow(dy, 2)
 		err = math.Abs(x1 - x)
+		if relativeError && x1 != 0 {
+			err /= math.Abs(x1)
+		}
 		x = x1
 		count++
 		mulTable = append(mulTable, Reg3{x, y, dy, d2y, int(count)})
@@ -350,4 +370,12 @@ func multipeRootAux(x0, tolerance float64, maxIt uint) (ans *RootAnswer) {
 	}
 	return
 
+}
+
+func SetRelativeError() {
+	relativeError = true
+}
+
+func SetAbsoluteError() {
+	relativeError = false
 }
